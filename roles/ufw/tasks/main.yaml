@@ -1,0 +1,85 @@
+- name: Run asserts (static import)
+  ansible.builtin.import_tasks: assert.yaml
+
+- name: Install ufw
+  ansible.builtin.apt:
+    name: ufw
+
+- name: Enable/disable IPV6 support
+  vars:
+    test_var: "{{ lookup('vars', item.test_var) }}"
+    is_set: "{{ test_var is defined }}"
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '{{ item.key }}='
+    insertafter: '#\s*{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+  when: is_set
+  loop:
+    - { key: "IPV6", test_var: "ufw_ipv6_enabled",
+        value: "{{ ufw_ipv6_enabled | default(false) | ternary('yes', 'no') }}" }
+  notify:
+    # See notes in handler for why this special reload is neccessary
+    - ipv6-reload
+
+- name: Configure default policies
+  vars:
+    test_var: "{{ lookup('vars', item.test_var) }}"
+    is_set: "{{ test_var is defined }}"
+  ansible.builtin.lineinfile:
+    path: /etc/default/ufw
+    regexp: '{{ item.key }}='
+    insertafter: '#\s*{{ item.key }}='
+    line: '{{ item.key }}={{ item.value }}'
+  when: is_set
+  loop:
+    - { key: "DEFAULT_INPUT_POLICY", test_var: "ufw_default_input_policy",
+        value: '"{{ ufw_default_input_policy | default | upper }}"' }
+    - { key: "DEFAULT_OUTPUT_POLICY", test_var: "ufw_default_output_policy",
+        value: '"{{ ufw_default_output_policy | default | upper }}"' }
+    - { key: "DEFAULT_FORWARD_POLICY", test_var: "ufw_default_forward_policy",
+        value: '"{{ ufw_default_forward_policy | default | upper }}"' }
+    - { key: "DEFAULT_APPLICATION_POLICY", test_var: "ufw_default_application_policy",
+        value: '"{{ ufw_default_application_policy | default | upper }}"' }
+  notify:
+    - reload-ufw
+
+- name: "Flush handlers"
+  ansible.builtin.meta: flush_handlers
+
+- name: Set up SSH rules (static import)
+  ansible.builtin.import_tasks: ssh-rules.yaml
+
+- name: Import app profiles
+  ansible.builtin.copy:
+    src: "{{ [ufw_profiles_source_dir, item] | path_join }}"
+    dest: "{{ [ufw_profiles_target_dir, item] | path_join }}"
+    owner: root
+    mode: '0644'
+  loop: "{{ ufw_profiles_present_list }}"
+  when: >
+    ufw_profiles_source_dir is defined and ufw_profiles_source_dir | length > 0 and
+    ufw_profiles_target_dir is defined and ufw_profiles_target_dir | length > 0
+
+- name: Set up general rules
+  community.general.ufw:
+    rule: "{{ item.rule | default('omit') }}"
+    proto: "{{ item.proto | default(omit) }}"
+    name: "{{ item.name | default(omit) }}"
+    to_ip: "{{ item.to | default(omit) }}"
+    to_port: "{{ item.port | default(omit) }}"
+    from_ip: "{{ item.from | default(omit) }}"
+    from_port: "{{ item.from_port | default(omit) }}"
+    comment: "{{ item.comment | default(omit) }}"
+    delete: "{{ item.delete | default(omit) }}"
+  loop: "{{ ufw_rules_list }}"
+
+- name: Ensure UFW is enabled
+  community.general.ufw:
+    state: enabled
+
+- name: Ensure ufw is started and enabled on boot
+  ansible.builtin.service:
+    name: ufw
+    enabled: true
+    state: started

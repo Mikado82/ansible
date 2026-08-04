@@ -1,0 +1,48 @@
+# ----------------------------------------------------------
+# Special reload procedure after chaning the IPV6 option.
+#
+# NOTE 1: After changing the IPV6 config line, 'ufw status'
+# fails with an error message until the firewall is reloaded.
+# Since the Ansible ufw module always calls 'ufw status' first,
+# it cannot be used to reload the firewall in this case, so
+# the reload is triggered via the Ansible command builtin.
+#
+# NOTE 2: According to the docs, a change to the IPV6 option
+# requires disabling and re-enabling UFW, therefore the two
+# extra handlers. This was actually verified: After enabling,
+# IPV6 access is not possible until the disable/enable cycle.
+#
+# NOTE 3: While the disable/enable includes a reloading,
+# the initial reload is still required, since otherwise
+# no IPV6 access is possible until another reload of ufw
+# (found out experimentally).
+
+# Reload the firewall using the command module instead of the ufw module
+- name: "IPV6 special reload step 1: Reload UFW via ansible.builtin.command"
+  listen: ipv6-reload
+  ansible.builtin.command:
+    cmd: "ufw reload"
+  changed_when: true
+  notify:
+    - ipv6-disable-ufw
+
+# Disable the firewall using the ufw module
+- name: "IPV6 special reload step 2: Disable UFW"
+  listen: ipv6-disable-ufw
+  community.general.ufw:
+    state: disabled
+  notify:
+    - ipv6-enable-ufw
+
+# Re-enable the firewall using the ufw module
+- name: "IPV6 special reload step 3: Re-enable UFW"
+  listen: ipv6-enable-ufw
+  community.general.ufw:
+    state: enabled
+# ----------------------------------------------------------
+
+# Regular UFW reload
+- name: Reload UFW
+  listen: reload-ufw
+  community.general.ufw:
+    state: reloaded

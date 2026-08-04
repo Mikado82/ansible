@@ -1,0 +1,14 @@
+- name: Assert that we are on a Debian-based system
+  ansible.builtin.assert:
+    that: ansible_facts['os_family'] == 'Debian'
+    fail_msg: "This role is only supported on Debian-based systems."
+    quiet: true
+
+- name: Assert that there are no unknown dictionary keys
+  vars:
+    unknown_keys: "{{ item.keys() | list | union(ufw_valid_keys) | difference(ufw_valid_keys) }}"
+  ansible.builtin.assert:
+    that: unknown_keys | length == 0
+    fail_msg: "Unknown key(s) in UFW rule: {{ unknown_keys }}."
+    quiet: true
+  loop: "{{ ufw_rules_list }}"

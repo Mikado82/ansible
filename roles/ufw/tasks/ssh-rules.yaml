@@ -1,0 +1,20 @@
+# Allow/limit SSH via the OpenSSH app profile if no special SSH port is specified
+- name: Allow/limit SSH via OpenSSH app profile
+  community.general.ufw:
+    rule: "{{ ufw_ssh_limit | default(false) | ternary('limit', 'allow') }}"
+    name: OpenSSH
+    from_ip: "{{ ufw_ssh_from | default(omit, true) }}"
+  when: >
+    ufw_add_ssh_rule | default(false) and
+    not (ufw_ssh_port is defined and ufw_ssh_port | int != 22)
+
+# Allow/limit OpenSSH via port rule if a special SSH port is specified
+- name: Allow/limit SSH via a port rule
+  community.general.ufw:
+    rule: "{{ ufw_ssh_limit | default(false) | ternary('limit', 'allow') }}"
+    to_port: "{{ ufw_ssh_port }}"
+    from_ip: "{{ ufw_ssh_from | default(omit, true) }}"
+    proto: tcp
+  when: >
+    ufw_add_ssh_rule | default(false) and
+    ufw_ssh_port is defined and ufw_ssh_port | int != 22
