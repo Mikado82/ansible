@@ -1,0 +1,9 @@
+---
+- name: Upgrade all packages via apt, optionally autoclean and autoremove
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+    upgrade: "{{ sysupgrade_upgrade }}"
+    autoclean: "{{ sysupgrade_autoclean }}"
+    autoremove: "{{ sysupgrade_autoremove }}"
+    purge: "{{ sysupgrade_autoremove_purge }}"

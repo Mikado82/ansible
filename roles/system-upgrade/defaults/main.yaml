@@ -1,0 +1,10 @@
+# Type of upgrade?
+sysupgrade_upgrade: dist
+
+# Remove useless packages from the cache?
+sysupgrade_autoclean: true
+
+# Remove dependencies that are no longer required?
+sysupgrade_autoremove: false
+# ...and purge their configuration files?
+sysupgrade_autoremove_purge: false
