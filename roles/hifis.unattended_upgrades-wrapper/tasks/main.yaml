@@ -1,0 +1,4 @@
+---
+- name: Only do this on Debian-based systems
+  ansible.builtin.import_tasks: Debian-based.yaml
+  when: ansible_facts['os_family'] == 'Debian'

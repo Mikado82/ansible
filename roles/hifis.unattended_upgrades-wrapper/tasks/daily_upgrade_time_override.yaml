@@ -1,0 +1,45 @@
+- name: Add systemd override for apt-daily-upgrade.timer
+  when: unattended_upgrades_oncalendar_override is defined
+  block:
+    - name: Ensure the override directory exists
+      ansible.builtin.file:
+        path: "/etc/systemd/system/apt-daily-upgrade.timer.d"
+        state: directory
+        mode: '0755'
+
+    - name: Create the override file
+      ansible.builtin.template:
+        dest: /etc/systemd/system/apt-daily-upgrade.timer.d/override.conf
+        src: apt-daily-upgrade.timer_override.conf.j2
+        mode: '0644'
+      notify:
+        - restart-apt-daily-upgrade-timer
+        - systemctl-reload-daemon
+
+- name: Remove systemd override for apt-daily-upgrade.timer
+  when: unattended_upgrades_oncalendar_override is not defined
+  block:
+    - name: Remove the override file
+      ansible.builtin.file:
+        dest: /etc/systemd/system/apt-daily-upgrade.timer.d/override.conf
+        state: absent
+      notify:
+        - restart-apt-daily-upgrade-timer
+        - systemctl-reload-daemon
+
+    - name: Check if the override directory exists
+      ansible.builtin.stat:
+        path: "/etc/systemd/system/apt-daily-upgrade.timer.d"
+      register: overrides_dir_stat
+
+    - name: Check if override directory is empty
+      ansible.builtin.find:
+        path: "/etc/systemd/system/apt-daily-upgrade.timer.d"
+      register: files_found
+      when: overrides_dir_stat.stat.exists
+
+    - name: Remove override directory if empty
+      ansible.builtin.file:
+        path: "/etc/systemd/system/apt-daily-upgrade.timer.d"
+        state: absent
+      when: files_found.matched is defined and files_found.matched == 0
