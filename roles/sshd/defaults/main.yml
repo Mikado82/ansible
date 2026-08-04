@@ -1,0 +1,4 @@
+---
+sshd_permit_pswd_login: false
+sshd_permit_root_login: false
+sshd_use_pam: true
