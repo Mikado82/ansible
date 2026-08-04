@@ -1,0 +1,21 @@
+#!/bin/sh
+# Managed by ansible
+
+{% if scheduled_script_notification_onerror_only | default(false) %}
+if [ "$SERVICE_RESULT" != "success" ]
+then
+
+{% endif %}
+# Get journalctl log since last unit start, using invocation ID. See:
+# https://unix.stackexchange.com/questions/298107/journalctl-list-until-last-unit-start/761372#761372
+ID=$(systemctl show --value -p InvocationID {{ scheduled_script_systemd_service_name }})
+LOG=$(journalctl INVOCATION_ID=$ID + _SYSTEMD_INVOCATION_ID=$ID --output=cat)
+
+# Send notification email
+if [ "$SERVICE_RESULT" = "success" ]; then RES="finished successfully"; else RES="FAILED"; fi
+SUBJECT="{{ scheduled_script_name }} on {{ ansible_facts['hostname'] }} $RES"
+echo "$LOG" | mail -s "$SUBJECT" {{ scheduled_script_notification_mail }}
+{% if scheduled_script_notification_onerror_only | default(false) %}
+
+fi
+{% endif %}

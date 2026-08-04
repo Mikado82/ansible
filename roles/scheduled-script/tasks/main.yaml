@@ -1,0 +1,12 @@
+- name: Assert that state is undefined or one of 'present' or 'absent'
+  ansible.builtin.assert:
+    that:
+      - scheduled_script_state in ['present', 'absent']
+    fail_msg: "If a 'state' is defined, it must be either 'present' or 'absent' (provided value: '{{ scheduled_script_state }}')."
+    quiet: true
+  when: scheduled_script_state is defined
+
+- name: Create or delete relevant files
+  vars:
+    create_files: "{{ scheduled_script_state | default('absent') == 'present' }}"
+  ansible.builtin.include_tasks: "{{ 'create.yaml' if create_files else 'delete.yaml' }}"

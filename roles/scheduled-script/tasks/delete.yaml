@@ -1,0 +1,31 @@
+- name: Check if timer file still exists
+  ansible.builtin.stat:
+    path: "{{ scheduled_script_timer_file }}"
+  register: timer_file
+
+- name: Disable timer
+  ansible.builtin.systemd_service:
+    name: "{{ scheduled_script_systemd_service_name }}.timer"
+    state: stopped
+    enabled: false
+    daemon_reload: true
+  when: timer_file.stat.exists
+
+- name: Clean persistent timer state
+  ansible.builtin.command:
+    cmd: "systemctl clean --what=state {{ scheduled_script_systemd_service_name }}.timer"
+  register: systemctl_clean_cmd
+  changed_when: systemctl_clean_cmd.rc == 0
+  failed_when: systemctl_clean_cmd.rc != 0
+  when: timer_file.stat.exists
+
+- name: Remove files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  notify: reload-systemd
+  loop:
+    - "{{ scheduled_script_file }}"
+    - "{{ scheduled_script_notification_script_file }}"
+    - "{{ scheduled_script_timer_file }}"
+    - "{{ scheduled_script_service_file }}"

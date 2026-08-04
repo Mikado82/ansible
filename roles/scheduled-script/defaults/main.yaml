@@ -1,0 +1,26 @@
+# Mondatory fields. The template file must be a jinja2 template, and
+# for the schedule, use the syntax of systemd timer's 'OnCalendar=' directive.
+# scheduled_script_name:
+# scheduled_script_description:
+# scheduled_script_template_file:
+# scheduled_script_schedule:
+
+# State of the scheduled script; can be 'present' or 'absent'
+scheduled_script_state: present
+
+# Whether the timer is enabled or not.
+# If false, the timer will be created but not started/enabled.
+scheduled_script_timer_enabled: true
+
+# Random delay in minutes to prevent all clients
+# from hitting the backup server at the same time
+scheduled_script_randomized_delay_min: 0
+
+# Notification settings. If no email address
+# is unspeficied, notifiactions are disabled.
+scheduled_script_notification_mail: root
+scheduled_script_notification_onerror_only: false
+
+# Default systemd path and script file path
+scheduled_script_systemd_base: /etc/systemd/system
+scheduled_script_path: /usr/local/sbin

@@ -1,0 +1,21 @@
+#
+# Managed by ansible
+#
+
+[Unit]
+Description=Timer for {{ scheduled_script_systemd_service_name }}.service
+After=network-online.target
+Wants=network-online.target
+
+[Timer]
+OnCalendar={{ scheduled_script_schedule }}
+Unit={{ scheduled_script_systemd_service_name }}.service
+
+# Configure random delay
+RandomizedDelaySec={{ scheduled_script_randomized_delay_min }}m
+
+# Immediately trigger if an activation was missed
+Persistent=true
+
+[Install]
+WantedBy=timers.target

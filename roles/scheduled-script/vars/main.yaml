@@ -1,0 +1,7 @@
+scheduled_script_systemd_service_name: "{{ scheduled_script_name }}"
+
+scheduled_script_file: "{{ [scheduled_script_path, scheduled_script_name] | path_join }}"
+scheduled_script_notification_script_file: "{{ scheduled_script_file }}_notification"
+
+scheduled_script_timer_file: "{{ [scheduled_script_systemd_base, scheduled_script_systemd_service_name + '.timer'] | path_join }}"
+scheduled_script_service_file: "{{ [scheduled_script_systemd_base, scheduled_script_systemd_service_name + '.service'] | path_join }}"

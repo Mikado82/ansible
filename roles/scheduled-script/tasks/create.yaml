@@ -1,0 +1,40 @@
+- name: Template the script file
+  ansible.builtin.template:
+    src: "{{ scheduled_script_template_file }}"
+    dest: "{{ scheduled_script_file }}"
+    owner: root
+    mode: '0755'
+
+- name: Template the notification script file
+  ansible.builtin.template:
+    src: notify.j2
+    dest: "{{ scheduled_script_notification_script_file }}"
+    owner: root
+    mode: '0755'
+  when: scheduled_script_notification_mail is defined
+
+- name: Template the systemd timer file
+  ansible.builtin.template:
+    src: timer.j2
+    dest: "{{ scheduled_script_timer_file }}"
+    owner: root
+    mode: '0644'
+  notify: reload-systemd
+
+- name: Template the systemd service file
+  ansible.builtin.template:
+    src: service.j2
+    dest: "{{ scheduled_script_service_file }}"
+    owner: root
+    mode: '0644'
+  notify: reload-systemd
+
+- name: "Flush handlers"
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable/disable timer
+  ansible.builtin.systemd_service:
+    name: "{{ scheduled_script_systemd_service_name }}.timer"
+    state: "{{ 'started' if scheduled_script_timer_enabled else 'stopped' }}"
+    enabled: "{{ scheduled_script_timer_enabled }}"
+    masked: false
