@@ -1,0 +1,26 @@
+- name: "Add OS-specific variables"
+  ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_facts['os_family'] }}.yaml"
+        - default.yaml
+      paths:
+        - 'vars'
+
+- name: "Make sure cron is installed"
+  ansible.builtin.package:
+    name: "{{ cron_package }}"
+    state: present
+  when: cron_package is defined and cron_package | length > 0
+
+- name: "Make sure that the zoneinfo files are installed (tzdata)"
+  ansible.builtin.package:
+    name: tzdata
+    state: present
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+  notify:
+    - restart-crond
