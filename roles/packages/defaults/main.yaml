@@ -1,0 +1,11 @@
+# Packages in this list are made present
+packages_present: []
+
+# Packages in this list are made present (apt-specific)
+packages_present_apt: []
+
+# Packages in this list are made absent
+packages_absent: []
+
+# Packages in this list are made absent (apt-specific)
+packages_absent_apt: []

@@ -1,0 +1,22 @@
+- name: Make specified packages present
+  ansible.builtin.package:
+    name: "{{ packages_present }}"
+    state: present
+
+- name: Make specified packages present (apt-specific)
+  ansible.builtin.apt:
+    name: "{{ packages_present_apt }}"
+    state: present
+    update_cache: true
+  when: ansible_facts['pkg_mgr'] == "apt"
+
+- name: Make specified packages absent
+  ansible.builtin.package:
+    name: "{{ packages_absent }}"
+    state: absent
+
+- name: Make specified packages absent (apt-specific)
+  ansible.builtin.apt:
+    name: "{{ packages_absent_apt }}"
+    state: absent
+  when: ansible_facts['pkg_mgr'] == "apt"
