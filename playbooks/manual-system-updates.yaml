@@ -1,0 +1,9 @@
+- name: Manually triggered system updates
+  hosts: all
+  become: true
+  vars:
+    sysupgrade_autoclean: true
+    sysupgrade_autoremove: true
+    sysupgrade_autoremove_purge: false
+  roles:
+    - role: system-upgrade

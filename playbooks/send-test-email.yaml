@@ -1,0 +1,14 @@
+- name: Sending a test e-mail
+  hosts: all
+  become: true
+  vars:
+    user_or_email: root
+
+  tasks:
+      # Send a test email
+    - name: Send test email
+      ansible.builtin.include_role:
+        name: postfix-local
+        tasks_from: test-email.yaml
+      vars:
+        postfix_test_send_email: "{{ user_or_email }}"
