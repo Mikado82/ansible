@@ -1,0 +1,8 @@
+- name: Automatically install qemu-guest-agent on KVM guests
+  ansible.builtin.package:
+    name: qemu-guest-agent
+    state: present
+  when: >
+    autoinstall_qemu_guest_agent and
+    ansible_facts['virtualization_type'] == "kvm" and
+    ansible_facts['virtualization_role'] == "guest"

@@ -1,0 +1,2 @@
+# Automatically install qemu-guest-agent on KVM guests?
+autoinstall_qemu_guest_agent: true
