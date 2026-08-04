@@ -1,0 +1,38 @@
+- name: Configure apt repositories
+  vars:
+    repos: >-
+      {{ [] +
+          (all_pve_repos if proxmox_configure_pve_repos | default(false) else []) +
+          (all_pbs_repos if proxmox_configure_pbs_repos | default(false) else [])
+      }}
+  ansible.builtin.deb822_repository:
+    name: "{{ item.repo }}"
+    types: deb
+    uris: "{{ item.repo_url }}"
+    suites: '{{ proxmox_debian_release }}'
+    components: "{{ item.component }}"
+    signed_by: "{{ proxmox_key_path }}"
+    enabled: "{{ item.enabled }}"
+  when: item.enabled or not proxmox_remove_unused_repos | default(false)
+  notify: update-apt-cache
+  loop: "{{ repos }}"
+  loop_control:
+    label: "{{ item.repo }}"
+
+- name: Remove unused repositories
+  ansible.builtin.file:
+    path: "{{ [apt_sources_path, item.repo] | path_join }}.sources"
+    state: absent
+  loop: "{{ all_pve_repos + all_pbs_repos }}"
+  when: not item.enabled and proxmox_remove_unused_repos | default(false)
+  loop_control:
+    label: "{{ item.repo }}"
+
+- name: Remove legacy .list-style repositories
+  ansible.builtin.file:
+    path: "{{ [apt_sources_path, item.repo] | path_join }}.list"
+    state: absent
+  loop: "{{ all_pve_repos + all_pbs_repos }}"
+  when: proxmox_remove_legacy_list_repos | default(false)
+  loop_control:
+    label: "{{ item.repo }}"

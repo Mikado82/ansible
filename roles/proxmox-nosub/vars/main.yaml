@@ -1,0 +1,63 @@
+# The apt sources directory
+apt_sources_path: /etc/apt/sources.list.d/
+
+# PVE enterprise repo
+pve_enterprise_repo:
+  repo: "{{ proxmox_apt_pve_enterprise_repo }}"
+  component: pve-enterprise
+  repo_url: "https://enterprise.proxmox.com/debian/pve"
+  enabled: "{{ not proxmox_use_nosub_repos | default(false) and proxmox_configure_pve_repos | default(false) }}"
+
+# PBS enterprise repo
+pbs_enterprise_repo:
+  repo: "{{ proxmox_apt_pbs_enterprise_repo }}"
+  component: pbs-enterprise
+  repo_url: "https://enterprise.proxmox.com/debian/pbs"
+  enabled: "{{ not proxmox_use_nosub_repos | default(false) and proxmox_configure_pbs_repos | default(false) }}"
+
+# Ceph enterprise repo
+ceph_enterprise_repo:
+  repo: "{{ proxmox_apt_ceph_enterprise_repo }}"
+  component: enterprise
+  repo_url: "https://enterprise.proxmox.com/debian/ceph-{{ proxmox_ceph_release }}"
+  enabled: "{{ not proxmox_use_nosub_repos | default(false) and proxmox_configure_pve_repos | default(false) }}"
+
+# PVE no-subscription repo
+pve_nosub_repo:
+  repo: "{{ proxmox_apt_pve_nosub_repo }}"
+  component: pve-no-subscription
+  repo_url: "http://download.proxmox.com/debian/pve"
+  enabled: "{{ proxmox_use_nosub_repos | default(false) and proxmox_configure_pve_repos | default(false) }}"
+
+# PBS no-subscription repo
+pbs_nosub_repo:
+  repo: "{{ proxmox_apt_pbs_nosub_repo }}"
+  component: pbs-no-subscription
+  repo_url: "http://download.proxmox.com/debian/pbs"
+  enabled: "{{ proxmox_use_nosub_repos | default(false) and proxmox_configure_pbs_repos | default(false) }}"
+
+# Ceph no-subscription repo
+ceph_nosub_repo:
+  repo: "{{ proxmox_apt_ceph_nosub_repo }}"
+  component: no-subscription
+  repo_url: "http://download.proxmox.com/debian/ceph-{{ proxmox_ceph_release }}"
+  enabled: "{{ proxmox_use_nosub_repos | default(false) and proxmox_configure_pve_repos | default(false) }}"
+
+# All PVE and Ceph repos
+all_pve_repos:
+  - "{{ pve_enterprise_repo }}"
+  - "{{ pve_nosub_repo }}"
+  - "{{ ceph_enterprise_repo }}"
+  - "{{ ceph_nosub_repo }}"
+
+# All PBS repos
+all_pbs_repos:
+  - "{{ pbs_enterprise_repo }}"
+  - "{{ pbs_nosub_repo }}"
+
+# Path for apt signing key
+proxmox_key_path: /usr/share/keyrings/proxmox-archive-keyring.gpg
+
+# NOTE: The '.service' is important, do not leave out
+pve_proxy_service: pveproxy.service
+pbs_proxy_service: proxmox-backup-proxy.service

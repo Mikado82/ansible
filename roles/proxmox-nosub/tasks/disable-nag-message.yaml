@@ -1,0 +1,20 @@
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Template the no-subscription-message script file
+  vars:
+    pxmx_nosub_restart_services: >
+      {{ ((pve_proxy_service in ansible_facts['services']) | ternary([ pve_proxy_service ], []) +
+          (pbs_proxy_service in ansible_facts['services']) | ternary([ pbs_proxy_service ], [])) | join(' ') }}
+  ansible.builtin.template:
+    src: no-sub-script.j2
+    dest: "{{ proxmox_no_sub_script_file }}"
+    owner: root
+    mode: '0755'
+
+- name: Template the apt config script file
+  ansible.builtin.template:
+    src: apt.j2
+    dest: "/etc/apt/apt.conf.d/99-no-sub-script"
+    owner: root
+    mode: '0644'

@@ -1,0 +1,7 @@
+- name: Configure apt sources
+  ansible.builtin.import_tasks:
+    file: configure-apt-sources.yaml
+
+- name: Disable nag message
+  ansible.builtin.import_tasks:
+    file: disable-nag-message.yaml

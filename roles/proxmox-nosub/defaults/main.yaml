@@ -1,0 +1,39 @@
+# Debian release version, which determines the Proxmox VE version.
+# Default is the system's current release version.
+proxmox_debian_release: "{{ ansible_facts['distribution_release'] }}"
+
+# Ceph release version. Should match the Proxmox VE version,
+# that is, the Debian release. Default mapping:
+# - bookworm -> quincy
+# - bullseye -> squid
+proxmox_ceph_release: >-
+  {{ 'quincy' if proxmox_debian_release == 'bookworm' else
+     'squid' if proxmox_debian_release == 'trixie' else
+     undef(hint='Ceph release version not set')
+  }}
+
+# Configure repositories for PVE and/or PBS
+proxmox_configure_pve_repos: false
+proxmox_configure_pbs_repos: false
+
+# Use no-subscription repositories by default
+proxmox_use_nosub_repos: true
+
+# Remove unused repositories from apt sources
+proxmox_remove_unused_repos: true
+
+# Remove legacy .list-style repositories from apt sources
+proxmox_remove_legacy_list_repos: true
+
+# Enterprise apt repository names
+proxmox_apt_pve_enterprise_repo: pve-enterprise
+proxmox_apt_pbs_enterprise_repo: pbs-enterprise
+proxmox_apt_ceph_enterprise_repo: ceph
+
+# No-subscription apt repository names
+proxmox_apt_pve_nosub_repo: pve-nosub
+proxmox_apt_pbs_nosub_repo: pbs-nosub
+proxmox_apt_ceph_nosub_repo: ceph-nosub
+
+# Path and name of the script file to be created
+proxmox_no_sub_script_file: "/usr/local/sbin/no-sub-script.sh"
