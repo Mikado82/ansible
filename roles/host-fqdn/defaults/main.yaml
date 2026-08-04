@@ -1,0 +1,6 @@
+# Method used to specify the FQDN host name.
+# Can be either "hosts-file" or "hostname"
+host_fqdn_method: hosts-file
+
+# The domain name to use for the FQDN
+# host_fqdn_domain: example.com

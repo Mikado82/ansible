@@ -1,0 +1,29 @@
+- name: Include regexp string
+  ansible.builtin.include_vars: regexp.yaml
+
+# Based on: https://stackoverflow.com/questions/30786263/only-check-whether-a-line-present-in-a-file-ansible
+- name: Check if /etc/hosts contains a valid entry for the host
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "{{ regexp_str }}"
+    state: absent
+  check_mode: true
+  changed_when: false
+  register: host_line
+
+- name: Assert the previously checked condition
+  ansible.builtin.assert:
+    that: host_line.found == 1
+    fail_msg: >
+      The /etc/hosts file does not contain an entry for the host that either starts with 127.0.1.1 or with
+      the IP address of its default route (or with the first available IP address if no default route exists),
+      and contains the hostname, host's FQDN, or both.
+    quiet: true
+
+- name: Make sure the /etc/hosts file resolves both the host's FQDN and its hostname
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: "{{ regexp_str }}"
+    line: '\1{{ ansible_facts["hostname"] }}.{{ host_fqdn_domain }} {{ ansible_facts["hostname"] }}'
+    backrefs: true
+  notify: gather-facts

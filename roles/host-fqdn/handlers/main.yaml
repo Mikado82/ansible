@@ -1,0 +1,3 @@
+- name: (Re-)gather Ansible facts
+  listen: gather-facts
+  ansible.builtin.gather_facts:

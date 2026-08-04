@@ -1,0 +1,5 @@
+- name: Set the hostname to its FQDN
+  ansible.builtin.hostname:
+    name: "{{ ansible_facts['hostname'] }}.{{ host_fqdn_domain }}"
+    use: systemd
+  notify: gather-facts

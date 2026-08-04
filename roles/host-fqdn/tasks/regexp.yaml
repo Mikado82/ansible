@@ -1,0 +1,8 @@
+# Matches:
+# ((<127.0.1.1>|<default-ip>)<space>)
+# ((<hostname>.<non-space>)|(<hostname>))
+# (<space>((<hostname>.<non-space>)|(<hostname>)))?
+# <space>*
+# 1st group (referenced as \1) include everything including the first \s+
+# 9th group (referenced as \9) contain the space between two hostname entries (if two exist)
+regexp_str: '^(((127\.0\.1\.1)|({{ ansible_facts["default_ipv4"].address | default(ansible_facts["all_ipv4_addresses"][0]) | regex_escape() }}))\s+)(({{ ansible_facts["hostname"] }}\.\S+)|({{ ansible_facts["hostname"] }}))((\s+)(({{ ansible_facts["hostname"] }}\.\S+)|({{ ansible_facts["hostname"] }})))?\s*$'

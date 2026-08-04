@@ -1,0 +1,3 @@
+- name: Fail if an unknown method was specified
+  ansible.builtin.fail:
+    msg: "ERROR: The method specified in the 'host_fqdn_method' variable is unknown."
