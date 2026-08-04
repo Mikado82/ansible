@@ -1,0 +1,54 @@
+# NOTE: How to determine which users are new - idea taken from:
+# https://serverfault.com/questions/1106276/ansible-how-to-run-subsequent-task-for-only-newly-created-users
+
+- name: "Add OS-specific variables"
+  ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_facts['os_family'] }}.yaml"
+        - default.yaml
+      paths:
+        - 'vars'
+
+- name: Load the user dictionaries and run asserts
+  ansible.builtin.include_tasks: load-and-assert.yaml
+
+- name: Get all current users (identified by their username)
+  ansible.builtin.getent:
+    database: passwd
+- name: Store current users
+  ansible.builtin.set_fact:
+    current_usernames_list: "{{ ansible_facts.getent_passwd.keys() | list }}"
+
+- name: Add/update users to be present
+  ansible.builtin.include_tasks: add-edit-user.yaml
+  loop: "{{ users_present_dict_list }}"
+  loop_control:
+    label: "{{ user.username }}"
+    loop_var: user
+
+- name: Create/update mail aliases
+  ansible.builtin.include_tasks: update-aliases.yaml
+  when: users_create_mail_aliases | default(false)
+
+- name: Get all current users again
+  ansible.builtin.getent:
+    database: passwd
+- name: Determine new users
+  ansible.builtin.set_fact:
+    new_usernames_list: "{{ ansible_facts.getent_passwd.keys() | list | difference(current_usernames_list) }}"
+
+- name: Perfom special tasks on all freshly created users
+  ansible.builtin.include_tasks: new-user-tasks.yaml
+  loop: "{{ users_present_dict_list | selectattr('username', 'in', new_usernames_list) }}"
+  loop_control:
+    label: "{{ user.username }}"
+    loop_var: user
+
+- name: Remove users to be absent
+  ansible.builtin.include_tasks: delete-user.yaml
+  loop: "{{ users_absent_dict_list }}"
+  loop_control:
+    label: "{{ user.username }}"
+    loop_var: user

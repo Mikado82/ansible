@@ -1,0 +1,52 @@
+# NOTE 1) To make the role idempotent, it is neccessary to specify a fixed salt in
+# the 'password_hash' function; otherwise, the task always shows up as 'changed'. See:
+# https://stackoverflow.com/questions/56869949/ansible-user-module-always-shows-changed
+# A better method to create an idempotent unique hash is to use random with a seed, see:
+# https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_filters.html
+
+# NOTE 2) Not specifying a 'password' attribute in ansible.builtin.user will lock the account
+# (same as setting the password to '!'), so use '' for an empty password if desired.
+
+# NOTE 3) There is no good way to manage users' groups. With the builtin user module,
+# groups can only be appended or completely replaced, and the user module cannot return
+# a list of current groups; see: https://github.com/ansible/ansible/issues/11024.
+# Therefore, a user is added to the sudo group via the builtin user module and append,
+# and is remove via calling the "gpasswd" command, as suggsted here:
+# https://stackoverflow.com/questions/38988986/how-to-remove-user-from-a-specified-group-in-ansible
+
+- name: Add/update user
+  vars:
+    password_salt: "{{ 65534 | random(seed=inventory_hostname | default) | string }}"
+  ansible.builtin.user:
+    name: "{{ user.username }}"
+    comment: "{{ user.fullname | default(omit) }}"
+    groups: "{{ user.sudo | default(false) | ternary([sudo_group], []) }}"
+    append: true # Refers to 'groups'
+    uid: "{{ user.uid | default(omit) }}"
+    shell: "{{ user.shell | default('/bin/bash') }}"
+    password: "{{ user.password | default(user.username) | password_hash('sha512', password_salt) }}"
+    update_password: "{{ user.update_passwd | default(false) | ternary('always', 'on_create') }}"
+  no_log: true  # protect password from being logged
+
+- name: Remove user from the sudo group if necessary
+  ansible.builtin.command:
+    cmd: "/usr/bin/gpasswd -d {{ user.username }} {{ sudo_group }}"
+  when: not user.sudo is defined or not user.sudo
+  register: grp_change
+  # If the user is not a member of the specified group, the return code is 3, so don't fail in that case
+  failed_when: grp_change.rc != 0 and grp_change.rc != 3
+  changed_when: grp_change.rc == 0
+
+- name: Lock user password if specified
+  ansible.builtin.user:
+    name: "{{ user.username }}"
+    password: '!'
+  when: user.lock_passwd | default(false)
+
+- name: Copy user's keys into authorized_keys file
+  ansible.posix.authorized_key:
+    user: "{{ user.username }}"
+    state: present
+    key: "{{ lookup('file', user.key_file) }}"
+    exclusive: "{{ user.keys_exclusive | default(false) }}"
+  when: user.key_file is defined and user.key_file | length > 0

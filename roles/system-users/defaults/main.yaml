@@ -1,0 +1,44 @@
+# Path to a file containing information on the users to be managed by this role.
+# It must contain a dictionary of dictionaries, where the key to the first dictionary
+# is an internal name for the user to be referenced, and its value is a dictionary with
+# the following fields giving information about that user. If an email address is
+# specified, an alias with this address will be created for the user in /etc/aliases.
+# If a password is specified, it will be set on user creation only, unless update_passwd
+# is set to true. If no password is specified the username will be used as the password
+# on user creation, and it will immediately be expired.
+# ---- Example/explanation: ----
+# john_doe:
+#   username: doe (string, mandatory)
+#   fullname: John Doe (string, optional)
+#   email: doe@mail.org (string, optional)
+#   uid: 2000 (number, optional)
+#   shell: /bin/bash (string, optional, default: /bin/bash)
+#   sudo: true (bool, optional, default: false)
+#   key_file: path/to/publickey (string, optional)
+#   keys_exclusive: false (bool, optional, default: false)
+#   password: mysecretpass (string, optional, default: <username>)
+#   update_passwd: false (bool, optional, default: false)
+#   lock_passwd: false (bool, optional, default: false)
+#   remove_data: false (bool, optional, default: false)
+# ----
+users_file:
+
+# List of users to be added, either as a comma-separated
+# string or as a list. Both sources will be merged.
+# Each user must be defined in the users file.
+users_present:
+users_present_list:
+
+# List of users to be removed, either as a comma-separated
+# string or as a list. Both sources will be merged.
+# Each user must be defined in the users file.
+users_absent:
+users_absent_list:
+
+# If set to true, mail aliases will be created for every user with an email address set
+users_create_mail_aliases: false
+
+# If set to true, an info mail will be sent to all freshly created users
+users_info_email: false
+users_info_email_subject: >
+  User account created on {{ ansible_facts['hostname'] }}

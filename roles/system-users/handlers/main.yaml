@@ -1,0 +1,5 @@
+---
+- name: "Run newaliases"
+  listen: newaliases
+  ansible.builtin.command: newaliases
+  changed_when: true

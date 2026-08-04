@@ -1,0 +1,92 @@
+- name: Include user list from file
+  ansible.builtin.include_vars:
+    file: "{{ users_file }}"
+    name: users_dict
+
+- name: Combine users from comma-separated string and explicit user list
+  vars:
+    users_present_list_flattend: "{{ [users_present_list | default([], true)] | flatten }}"
+    users_absent_list_flattend: "{{ [users_absent_list | default([], true)] | flatten }}"
+    users_present_split2list: "{{ users_present | default('', true) | split(',') | map('trim') | select() }}"
+    users_absent_split2list: "{{ users_absent | default('', true) | split(',') | map('trim') | select() }}"
+  ansible.builtin.set_fact:
+    users_present_key_list: "{{ users_present_list_flattend + users_present_split2list }}"
+    users_absent_key_list: "{{ users_absent_list_flattend + users_absent_split2list }}"
+
+- name: Assert users are not both in the present and absent list
+  vars:
+    list_intersection: "{{ users_present_key_list | intersect(users_absent_key_list) }}"
+  ansible.builtin.assert:
+    that: list_intersection | length == 0
+    fail_msg: "The following user(s) are in both the present and absent users list: '{{ list_intersection | join(', ') }}'."
+    quiet: true
+
+- name: Assert that all users exist in the provided users file
+  ansible.builtin.assert:
+    that: item in users_dict.keys()
+    fail_msg: "User '{{ item }}' does not exist in the given users file '{{ users_file }}'."
+    quiet: true
+  loop: "{{ users_present_key_list + users_absent_key_list }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Set the user dictionary lists as facts to avoid lazy evaluation
+  ansible.builtin.set_fact:
+    users_present_dict_list: "{{ users_present_key_list | map('extract', users_dict) | list }}"
+    users_absent_dict_list: "{{ users_absent_key_list | map('extract', users_dict) | list }}"
+
+- name: Assert that all users have the mandatory username defined
+  ansible.builtin.assert:
+    that: item.username is defined
+    fail_msg: "All user dictionaries must provide a 'username'."
+    quiet: true
+  loop: "{{ users_present_dict_list + users_absent_dict_list }}"
+
+- name: Assert that there are no unknown dictionary keys
+  vars:
+    unknown_keys: "{{ item.keys() | list | union(users_valid_keys) | difference(users_valid_keys) }}"
+  ansible.builtin.assert:
+    that: unknown_keys | length == 0
+    fail_msg: "Unknown key(s) in user dictionary: {{ unknown_keys }}."
+    quiet: true
+  loop: "{{ users_present_dict_list + users_absent_dict_list }}"
+  loop_control:
+    label: "{{ item.username }}"
+
+- name: Assert that each username is unique amongst all users to be present
+  vars:
+    username_list: "{{ users_present_dict_list | map(attribute='username') }}"
+    username_freq: "{{ username_list | community.general.counter }}"
+    duplicate_usernames: "{{ username_freq | dict2items | selectattr('value', '>', 1) | map(attribute='key') }}"
+  ansible.builtin.assert:
+    that: duplicate_usernames | length == 0
+    fail_msg: "The following username(s) are not unique amongst the users to be present: {{ duplicate_usernames | join(', ') }}"
+    quiet: true
+  when: users_present_dict_list | length > 1
+
+- name: Assert that a password is specified when update_passwd is set to true
+  ansible.builtin.assert:
+    that: not (item.update_passwd | default(false) and item.password is not defined)
+    fail_msg: "You must specify a password when setting update_passwd to true."
+    quiet: true
+  loop: "{{ users_present_dict_list }}"
+  loop_control:
+    label: "{{ item.username }}"
+
+- name: Assert that a password and lock_passwd are not both specified
+  ansible.builtin.assert:
+    that: not (item.password is defined and item.lock_passwd | default(false))
+    fail_msg: "You cannot specify a password and set lock_passwd to true at the same time."
+    quiet: true
+  loop: "{{ users_present_dict_list }}"
+  loop_control:
+    label: "{{ item.username }}"
+
+- name: Assert that a lock_passwd and sudo are not both specified
+  ansible.builtin.assert:
+    that: not (item.sudo | default(false) and item.lock_passwd | default(false))
+    fail_msg: "You cannot allow sudo access and set lock_passwd to true at the same time."
+    quiet: true
+  loop: "{{ users_present_dict_list }}"
+  loop_control:
+    label: "{{ item.username }}"

@@ -1,0 +1,5 @@
+- name: Remove user
+  ansible.builtin.user:
+    name: "{{ user.username }}"
+    state: absent
+    remove: "{{ user.remove_data | default(false) }}"

@@ -1,0 +1,14 @@
+- name: Expire password if it is auto-generated (unless password is locked)
+  ansible.builtin.command: passwd --expire {{ user.username }}
+  register: command_result
+  changed_when: command_result.rc == 0
+  when: not (user.password is defined or user.lock_passwd | default(false))
+
+- name: Send info email
+  community.general.mail:
+    to: "{{ user.username }}"
+    subject: "{{ users_info_email_subject }}"
+    body: "{{ lookup('template', 'info-email.j2') }}"
+  when: >
+    users_info_email | default(false) and
+    user.email is defined and user.email | length > 0

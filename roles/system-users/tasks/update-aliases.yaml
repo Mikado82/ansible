@@ -1,0 +1,32 @@
+- name: Check if /etc/aliases file exists
+  ansible.builtin.stat:
+    path: /etc/aliases
+  register: aliases_file
+
+- name: Create warning message if /etc/aliases does not exist
+  ansible.builtin.fail:
+    msg: "WARNING: The file /etc/aliases does not exist, so no user aliases will be set up"
+  when: not aliases_file.stat.exists
+  failed_when: false
+
+- name: Update the /etc/aliases file
+  vars:
+    # Use Jinja2 to create list of aliases
+    alias_list: |
+      {% for user in users_present_dict_list %}
+      {% if user.email is defined %}
+      {{ user.username }}: {{ user.email }}
+      {% endif %}
+      {% endfor %}
+  ansible.builtin.blockinfile:
+    path: /etc/aliases
+    marker: '# {mark} Ansible-managed system user aliases'
+    append_newline: true
+    prepend_newline: true
+    # If the alias_list is empty, the block will be removed automatically
+    block: "{{ alias_list | default('', true) }}"
+  when: aliases_file.stat.exists
+  notify: newaliases
+
+- name: "Flush handlers"
+  ansible.builtin.meta: flush_handlers

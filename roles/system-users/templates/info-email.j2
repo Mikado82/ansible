@@ -1,0 +1,13 @@
+Dear {{ user.fullname }},
+
+an account has been created for you on the server '{{ ansible_facts['hostname'] }}', with the user name '{{ user.username }}'.
+To connect, use: 'ssh {{ user.username }}@{{ ansible_facts['fqdn'] }}'.
+
+If you get 'Permission denied (publickey)' as an error message, something is wrong with loading/using your SSH key.
+
+{% if not (user.password is defined or user.lock_passwd | default(false)) %}
+After a successful login, you will be asked to change your password.
+Your current password is the same as your username.
+
+{% endif %}
+Cheers!
