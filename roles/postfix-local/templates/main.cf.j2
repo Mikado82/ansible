@@ -1,0 +1,76 @@
+# =================================================
+# ANSIBLE GENERATED FILE
+# Generated via the Ansible role 'postfix-local'.
+# For a commented, more complete version of this
+# config file, see /usr/share/postfix/main.cf.dist.
+# =================================================
+
+# -----------------------------
+# Generally set default options
+# (same on every fresh install)
+# -----------------------------
+
+smtpd_banner = $myhostname ESMTP $mail_name
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+readme_directory = no
+
+# See http://www.postfix.org/COMPATIBILITY_README.html
+compatibility_level = 3.9
+
+# --------------------------------
+# Explicitly set default options
+# (defaults from dpkg-reconfigure)
+# --------------------------------
+
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+mailbox_size_limit = 0
+recipient_delimiter = +
+
+# ------------------------
+# Host/relay configuration
+# ------------------------
+
+smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated defer_unauth_destination
+relayhost = 
+
+myhostname = {{ postfix_myhostname }}
+myorigin = {{ (ansible_facts['os_family'] == 'Debian') | ternary('/etc/mailname', postfix_myorigin) }}
+mydestination = $myhostname, localhost.$mydomain, localhost
+mynetworks = {{ postfix_mynetworks_localhost ~ ' ' ~ postfix_mynetworks_extra | default('', true) }}
+
+inet_interfaces = {{ postfix_inet_interfaces }}
+inet_protocols = all
+
+# -----------------
+# TLS configuration
+# -----------------
+
+smtpd_tls_security_level = {{ 'may' if has_smtpd_tls_chain_files else 'none' }}
+{% if has_smtpd_tls_chain_files %}
+smtpd_tls_chain_files =
+{% for file in postfix_tls_chain_files %}
+    {{ file }}{{ ',' if not loop.last }}
+{% endfor %}
+{% endif %}
+
+smtp_tls_security_level = may
+smtp_tls_CApath={{ postfix_tls_ca_path }}
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+{% if postfix_use_srs | default(false) %}
+
+# -----------------
+# SRS configuration
+# -----------------
+sender_canonical_maps = tcp:localhost:10001
+sender_canonical_classes = envelope_sender
+recipient_canonical_maps = tcp:localhost:10002
+recipient_canonical_classes= envelope_recipient,header_recipient
+{% endif %}

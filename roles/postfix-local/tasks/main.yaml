@@ -1,0 +1,35 @@
+# Based on dgibbs64.postfix_send_only_relay, found at:
+# https://galaxy.ansible.com/ui/standalone/roles/dgibbs64/postfix_send_only_relay/
+
+- name: "Add OS-specific variables"
+  ansible.builtin.include_vars: "{{ lookup('ansible.builtin.first_found', params) }}"
+  vars:
+    params:
+      files:
+        - "{{ ansible_facts['os_family'] }}.yaml"
+        - default.yaml
+      paths:
+        - 'vars'
+
+- name: "Get FQDN via Ansible fact"
+  ansible.builtin.setup:
+    filter:
+      - 'ansible_fqdn'
+
+- name: Install
+  ansible.builtin.import_tasks: install.yaml
+
+- name: Configure
+  ansible.builtin.import_tasks: configure.yaml
+
+- name: Aliases
+  ansible.builtin.import_tasks: aliases.yaml
+
+- name: "Ensure postfix is started and enabled on boot"
+  ansible.builtin.service:
+    name: postfix
+    enabled: true
+    state: started
+
+- name: Send test email
+  ansible.builtin.import_tasks: test-email.yaml

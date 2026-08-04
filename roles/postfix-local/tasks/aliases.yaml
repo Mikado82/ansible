@@ -1,0 +1,27 @@
+- name: Set alias for root
+  ansible.builtin.lineinfile:
+    path: /etc/aliases
+    regexp: "^root:"
+    line: "root: {{ postfix_root_alias }}"
+    state: present
+  when: postfix_root_alias is defined
+  notify: newaliases
+
+- name: Set extra aliases
+  vars:
+    # Use Jinja2 to create list of aliases
+    alias_list: |
+      {% for item in postfix_extra_aliases | default([], true) %}
+      {{ item.name | mandatory }}: {{ item.alias | mandatory }}
+      {% endfor %}
+  ansible.builtin.blockinfile:
+    path: /etc/aliases
+    marker: '# {mark} Ansible-managed extra aliases'
+    append_newline: true
+    prepend_newline: true
+    # If the alias_list is empty, the block will be removed automatically
+    block: "{{ alias_list | default('', true) }}"
+  notify: newaliases
+
+- name: "Flush handlers"
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,35 @@
+---
+- name: "Ensure postfix is installed"
+  ansible.builtin.package:
+    name: postfix
+    state: present
+
+- name: "Ensure mailutils is installed (Debian Family)"
+  ansible.builtin.package:
+    name: mailutils
+    state: present
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: "Ensure mailx is installed (Red Hat Family)"
+  ansible.builtin.package:
+    name: mailx
+    state: present
+  when:
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution_major_version']|int <= 8
+    - ansible_facts['distribution_major_version']|int == 2023
+
+- name: "Ensure s-nail is installed (Red Hat Family)"
+  ansible.builtin.package:
+    name: s-nail
+    state: present
+  when:
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution_major_version']|int >= 9
+    - ansible_facts['distribution_major_version']|int != 2023
+
+- name: "Ensure PostSRSd is installed"
+  ansible.builtin.package:
+    name: postsrsd
+    state: present
+  when: postfix_use_srs | default(false)

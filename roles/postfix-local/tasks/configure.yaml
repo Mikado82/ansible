@@ -1,0 +1,30 @@
+- name: Template Postfix main.cf file
+  vars:
+    has_smtpd_tls_chain_files: "{{ postfix_tls_chain_files | default([], true) | length > 0 }}"
+  ansible.builtin.template:
+    src: main.cf.j2
+    dest: "{{ postfix_config_file }}"
+    owner: root
+    mode: '0644'
+  notify:
+    - restart-postfix
+
+- name: Template /etc/mailname on Debian-based systems
+  ansible.builtin.template:
+    src: mailname.j2
+    dest: /etc/mailname
+    owner: root
+    mode: '0644'
+  when: ansible_facts['os_family'] == 'Debian'
+  notify:
+    - restart-postfix
+
+- name: Template /etc/mailutils on Debian-based systems
+  ansible.builtin.template:
+    src: mailutils.conf.j2
+    dest: /etc/mailutils.conf
+    owner: root
+    mode: '0644'
+  when: ansible_facts['os_family'] == 'Debian'
+  notify:
+    - restart-postfix

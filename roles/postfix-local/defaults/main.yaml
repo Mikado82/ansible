@@ -1,0 +1,42 @@
+---
+# Config path for postfix
+postfix_config_file: "/etc/postfix/main.cf"
+
+# The FQDN of the host ...
+# Default is the FQDN that Ansible reports.
+postfix_myhostname: "{{ ansible_facts['fqdn'] }}"
+
+# The domain that is used to send emails if no domain is specified.
+# This is usually the FQDN of the host or its domain only.
+postfix_myorigin: "{{ postfix_myhostname }}"
+
+# mynetworks
+postfix_mynetworks_localhost: "127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128"
+# postfix_mynetworks_extra:
+
+# Interfaces that can send emails, usually 'all' or 'loopback-only'.
+# loopback-only allowes only localhost to send.
+postfix_inet_interfaces: loopback-only
+
+# TLS parameters for SMTP server;
+# postfix_tls_chain_files:
+#  - "/path/to/private.key"
+#  - "/path/to/cert.pem"
+
+# TLS parameters for SMTP;
+# the default differs for different OS
+postfix_tls_ca_path: "{{ postfix_tls_default_ca_path }}"
+
+# Sender Rewriting Scheme (SRS) config:
+# Install and use PostSRSd?
+postfix_use_srs: false
+
+# Alias that will receive all emails sent to the root user.
+# postfix_root_alias:
+
+# Extra aliases to be created, provided as a list of dictionaries.
+# Each dictionary must provide the two mandatory fields 'name' and 'alias'.
+# postfix_extra_aliases:
+
+# Email address to recieve test email when role is run.
+# postfix_test_send_email:

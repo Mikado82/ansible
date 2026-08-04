@@ -1,0 +1,7 @@
+- name: "Send test email"
+  community.general.mail:
+    to: "{{ postfix_test_send_email }}"
+    subject: "Test email from {{ ansible_facts['hostname'] }}"
+    body: "Sending email from {{ ansible_facts['hostname'] }} using Ansible. If you recieved this email \
+           it means that the MTA has sucessfully been configured and email is being delivered."
+  when: postfix_test_send_email is defined and postfix_test_send_email | length > 0
