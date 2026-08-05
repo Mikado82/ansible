@@ -12,7 +12,7 @@
 
 - name: Import the unattended upgrades role by hifis
   ansible.builtin.import_role:
-    name: hifis.unattended_upgrades
+    name: hifis.unattended-upgrades
 
 - name: Import the daily upgrade time override tasks
   ansible.builtin.import_tasks: daily_upgrade_time_override.yaml
