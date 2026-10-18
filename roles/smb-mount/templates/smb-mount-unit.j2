@@ -1,0 +1,14 @@
+[Unit]
+Description=Ansible-managed CIFS mount unit for {{ item.mount_point }}
+After=network-online.target
+Wants=network-online.target
+ 
+[Mount]
+What={{ item.share }}
+Where={{ item.mount_point }}
+Type=cifs
+Options={{ options }}
+TimeoutSec={{ item.timeout | default(10) }}
+ 
+[Install]
+WantedBy=multi-user.target

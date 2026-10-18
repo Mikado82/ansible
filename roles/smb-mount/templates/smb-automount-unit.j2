@@ -1,0 +1,10 @@
+[Unit]
+Description=Ansible-managed automount point for {{ item.mount_point }}
+ConditionPathExists={{ item.mount_point }}
+ 
+[Automount]
+Where={{ item.mount_point }}
+TimeoutIdleSec=0
+
+[Install]
+WantedBy=multi-user.target

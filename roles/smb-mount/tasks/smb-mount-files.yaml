@@ -1,0 +1,111 @@
+- name: Create SMB mount files
+  when: item.state is not defined or item.state == 'present'
+  block:
+    # Ensure the mount point directory exists
+    - name: Ensure the mount point directory exists
+      ansible.builtin.file:
+        path: "{{ item.mount_point }}"
+        state: directory
+        mode: '0755'
+
+    # Create systemd mount unit file
+    - name: Create systemd mount unit file for SMB share
+      ansible.builtin.template:
+        src: smb-mount-unit.j2
+        dest: "{{ mount_unit_file }}"
+        mode: '0644'
+
+    # Create systemd automount unit file
+    - name: Create systemd automount unit file for SMB share
+      ansible.builtin.template:
+        src: smb-automount-unit.j2
+        dest: "{{ automount_unit_file }}"
+        mode: '0644'
+
+    # Reload systemd to recognize new/changed unit files
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    # Enable and start the automount unit
+    - name: Enable and start the automount unit
+      ansible.builtin.systemd:
+        name: "{{ automount_unit_name }}"
+        enabled: true
+        state: started
+
+- name: Remove SMB mount files
+  when: item.state is defined and item.state == 'absent'
+  block:
+    # Gather mount facts
+    - name: Populate mount facts
+      ansible.builtin.mount_facts:
+        include_aggregate_mounts: false
+        fstypes: cifs
+
+    # Check if mount is active
+    - name: Check if the mount is active
+      ansible.builtin.set_fact:
+        is_mounted: >
+          {{ ansible_facts.mounts |
+            selectattr('mount', 'equalto', item.mount_point) |
+            selectattr('device', 'equalto', item.share) |
+            selectattr('fstype', 'equalto', 'cifs') |
+            list | count > 0 }}
+
+    # Disable and stop automount unit
+    - name: Disable and stop the automount unit
+      ansible.builtin.systemd:
+        name: "{{ automount_unit_name }}"
+        enabled: false
+        state: stopped
+      when: is_mounted
+
+    # Disable and stop the mount unit
+    - name: Disable and stop the mount unit
+      ansible.builtin.systemd:
+        name: "{{ mount_unit_name }}"
+        enabled: false
+        state: stopped
+      when: is_mounted
+
+    # Remove systemd mount unit file
+    - name: Remove systemd mount unit file for SMB share
+      ansible.builtin.file:
+        path: "{{ mount_unit_file }}"
+        state: absent
+
+    # Remove systemd automount unit file for SMB share
+    - name: Remove systemd automount unit file for SMB share
+      ansible.builtin.file:
+        path: "{{ automount_unit_file }}"
+        state: absent
+
+    # Reload systemd to recognize removed unit files
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    # Remove mount point directory if empty
+    - name: Remove mount point if empty
+      when: smb_remove_empty_mount_points | default(false)
+      block:
+        # Check if mount point directory exists
+        - name: Check if mount point directory exists
+          ansible.builtin.stat:
+            path: "{{ item.mount_point }}"
+          register: mount_dir_stat
+
+        # Check if mount point directory is empty
+        - name: Check if mount point directory is empty
+          ansible.builtin.find:
+            path: "{{ item.mount_point }}"
+          register: files_found
+          when: mount_dir_stat.stat.exists
+
+        # Remove mount point directory
+        - name: Remove mount point directory
+          ansible.builtin.file:
+            path: "{{ item.mount_point }}"
+            state: absent
+          when: files_found.matched is defined and files_found.matched == 0

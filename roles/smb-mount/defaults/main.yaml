@@ -1,0 +1,19 @@
+# If set to true and a mount is removed, empty mount point directories will be removed as well.
+smb_remove_empty_mount_points: true
+
+# List of SMB mounts to manage
+smb_mounts:
+#  - share:                       # e.g. //server/myshare
+#    mount_point:                 # e.g. /mnt/network/myshare
+#    credentials_dir:             # e.g. /home/mylocaluser/.mount-credentials
+#    smb_username:
+#    smb_password:                # If undefined: No change to credentials
+#    local_user:                  # optional, e.g. 'mylocaluser'
+#    local_group:                 # optional, e.g. 'mylocalgroup'
+#    force_local_user:            # optional, default is false
+#    force_local_group:           # optional, default is false
+#    file_mode:                   # optional, e.g. '0644'
+#    dir_mode:                    # optional, e.g. '0755'
+#    timeout:                     # optional, default is '10' (in seconds)
+#    state: present               # optional, default is 'present'
+#    mount_unit_path:             # optional, default is /etc/systemd/system

@@ -1,0 +1,60 @@
+# Based on https://ppfeufer.de/linux-on-demand-nfs-and-samba-cifs-connections-with-systemd-automount/
+
+# Install cifs-utils package
+- name: Ensure cifs-utils is installed
+  ansible.builtin.package:
+    name: cifs-utils
+    state: present
+
+- name: Iterate over all intended mounts
+  vars:
+    # Generate two names from the mount point: Both have the leading slash removed and slashes
+    # replaced with dashes, but the systemd unit files additionally have dashes escaped with \x2d.
+    cred_name_from_mount_point: "{{ item.mount_point | regex_replace('^/', '') | regex_replace('/', '-') }}"
+    systemd_name_from_mount_point: "{{ item.mount_point | regex_replace('^/', '') | regex_replace('-', '\\\\x2d') | regex_replace('/', '-') }}"
+    # Build credentials file name and path
+    credentials_name: "{{ cred_name_from_mount_point }}.cred"
+    credentials_file: "{{ [item.credentials_dir, credentials_name] | path_join }}"
+    # Build systemd unit name and path
+    mount_unit_name: "{{ systemd_name_from_mount_point }}.mount"
+    automount_unit_name: "{{ systemd_name_from_mount_point }}.automount"
+    mount_unit_path: "{{ item.mount_unit_path | default('/etc/systemd/system') }}"
+    mount_unit_file: "{{ [mount_unit_path, mount_unit_name] | path_join }}"
+    automount_unit_file: "{{ [mount_unit_path, automount_unit_name] | path_join }}"
+    # Build options string
+    opt_cred: "credentials={{ credentials_file }}"
+    opt_uid: "{{ 'uid=' + item.local_user if item.local_user is defined else '' }}"
+    opt_gid: "{{ 'gid=' + item.local_group if item.local_group is defined else '' }}"
+    opt_force_uid: "{{ 'forceuid' if item.force_local_user | default(false, true) else '' }}"
+    opt_force_gid: "{{ 'forcegid' if item.force_local_group | default(false, true) else '' }}"
+    opt_file_mode: "{{ 'file_mode=' + item.file_mode if item.file_mode is defined else '' }}"
+    opt_dir_mode: "{{ 'dir_mode=' + item.dir_mode if item.dir_mode is defined else '' }}"
+    opt_charset: "iocharset=utf8"
+    options: >-
+      {{ [opt_cred, opt_charset,
+          opt_uid, opt_force_uid,
+          opt_gid, opt_force_gid,
+          opt_file_mode, opt_dir_mode] |
+          reject('match', '^$') | join(',') }}
+  when: smb_mounts is defined and smb_mounts | length > 0
+  no_log: true
+  block:
+    # Assertions
+    - name: Assert that state is undefined or one of 'present' or 'absent'
+      ansible.builtin.assert:
+        that:
+          - item.state in ['present', 'absent']
+        fail_msg: "If a 'state' is defined, it must be either 'present' or 'absent' (provided value: '{{ item.state }}')."
+        quiet: true
+      when: item.state is defined
+      loop: "{{ smb_mounts }}"
+
+    # Create or remove SMB credentials files
+    - name: Create or remove SMB credentials files
+      ansible.builtin.include_tasks: smb-credentials-files.yaml
+      loop: "{{ smb_mounts }}"
+
+    # Create or remove SMB mount files
+    - name: Create or remove SMB mount files
+      ansible.builtin.include_tasks: smb-mount-files.yaml
+      loop: "{{ smb_mounts }}"
