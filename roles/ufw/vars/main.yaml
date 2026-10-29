@@ -3,4 +3,4 @@ ufw_rules_list: "{{ [ufw_rules | default([], true)] | flatten }}"
 ufw_profiles_present_list: "{{ [ufw_profiles_present | default([], true)] | flatten }}"
 
 # List of valid keys for the rule dictionary
-ufw_valid_keys: [rule, proto, name, to, port, from, from_port, comment, delete]
+ufw_valid_keys: [rule, proto, name, to, port, from, from_port, route, if_in, if_out, comment, delete]

@@ -9,6 +9,9 @@
 #   port:      to_port: Destination port
 #   from:      from_ip: Source IP address. UFW default: "any"
 #   from_port: from_port: Source port
+#   route:     route: Apply the rule to routed/forwarded packets, UFW default: "false"
+#   if_in:     interface_in: Input interface for the rule
+#   if_out:    interface_out: Output interface for the rule
 #   comment:   comment: Add a comment to the rule. Requires UFW version >=0.35
 #   delete:    delete: Delete rule
 #

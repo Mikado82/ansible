@@ -63,13 +63,16 @@
 
 - name: Set up general rules
   community.general.ufw:
-    rule: "{{ item.rule | default('omit') }}"
+    rule: "{{ item.rule | default(omit) }}"
     proto: "{{ item.proto | default(omit) }}"
     name: "{{ item.name | default(omit) }}"
     to_ip: "{{ item.to | default(omit) }}"
     to_port: "{{ item.port | default(omit) }}"
     from_ip: "{{ item.from | default(omit) }}"
     from_port: "{{ item.from_port | default(omit) }}"
+    route: "{{ item.route | default(omit) }}"
+    interface_in: "{{ item.if_in | default(omit) }}"
+    interface_out: "{{ item.if_out | default(omit) }}"
     comment: "{{ item.comment | default(omit) }}"
     delete: "{{ item.delete | default(omit) }}"
   loop: "{{ ufw_rules_list }}"
