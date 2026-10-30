@@ -17,7 +17,6 @@
   when:
     - ansible_facts['os_family'] == "RedHat"
     - ansible_facts['distribution_major_version']|int <= 8
-    - ansible_facts['distribution_major_version']|int == 2023
 
 - name: "Ensure s-nail is installed (Red Hat Family)"
   ansible.builtin.package:
@@ -26,7 +25,6 @@
   when:
     - ansible_facts['os_family'] == "RedHat"
     - ansible_facts['distribution_major_version']|int >= 9
-    - ansible_facts['distribution_major_version']|int != 2023
 
 - name: "Ensure PostSRSd is installed"
   ansible.builtin.package:
