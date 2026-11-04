@@ -1,0 +1,16 @@
+- name: Upgrade all packages via dnf
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+  when: sysupgrade_upgrade | string | lower not in ['no', 'false']
+
+- name: Remove no longer needed packages via dnf autoremove
+  ansible.builtin.dnf:
+    autoremove: true
+  when: sysupgrade_autoremove | bool
+
+- name: Clean cached package files (equivalent to apt autoclean)
+  ansible.builtin.command: dnf clean packages
+  changed_when: false
+  when: sysupgrade_autoclean | bool

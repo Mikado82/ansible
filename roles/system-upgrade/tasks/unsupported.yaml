@@ -1,0 +1,3 @@
+- name: Fail on unsupported systems
+  ansible.builtin.fail:
+    msg: "Currently, this role only supports Debian- or RHEL-based systems (via apt or dnf)."
