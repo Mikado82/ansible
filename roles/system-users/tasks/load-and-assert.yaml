@@ -90,3 +90,14 @@
   loop: "{{ users_present_dict_list }}"
   loop_control:
     label: "{{ item.username }}"
+
+- name: Assert that no user has the same group in groups_present and groups_absent
+  vars:
+    group_intersection: "{{ item.groups_present | default([]) | intersect(item.groups_absent | default([])) }}"
+  ansible.builtin.assert:
+    that: group_intersection | length == 0
+    fail_msg: "The following group(s) are in both groups_present and groups_absent for user '{{ item.username }}': '{{ group_intersection | join(', ') }}'."
+    quiet: true
+  loop: "{{ users_present_dict_list + users_absent_dict_list }}"
+  loop_control:
+    label: "{{ item.username }}"

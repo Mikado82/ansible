@@ -1,5 +1,5 @@
 # List of valid keys for the user dictionary
-users_valid_keys: [username, fullname, email, uid, shell, sudo, key_file, keys_exclusive, password, update_passwd, lock_passwd, remove_data]
+users_valid_keys: [username, fullname, email, uid, shell, groups_present, groups_absent, sudo, key_file, keys_exclusive, password, update_passwd, lock_passwd, remove_data]
 
 # Get the user var
 # NOTE: Broken in current Ubuntu version of Ansible

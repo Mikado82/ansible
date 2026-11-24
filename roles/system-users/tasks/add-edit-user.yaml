@@ -17,10 +17,12 @@
 - name: Add/update user
   vars:
     password_salt: "{{ 65534 | random(seed=inventory_hostname | default) | string }}"
+    sudo_group_present: "{{ user.sudo | default(false) | ternary([sudo_group], []) }}"
+    groups_present: "{{ (user.groups_present | default([]) + sudo_group_present) | unique }}"
   ansible.builtin.user:
     name: "{{ user.username }}"
     comment: "{{ user.fullname | default(omit) }}"
-    groups: "{{ user.sudo | default(false) | ternary([sudo_group], []) }}"
+    groups: "{{ groups_present }}"
     append: true # Refers to 'groups'
     uid: "{{ user.uid | default(omit) }}"
     shell: "{{ user.shell | default('/bin/bash') }}"
@@ -28,10 +30,13 @@
     update_password: "{{ user.update_passwd | default(false) | ternary('always', 'on_create') }}"
   no_log: true  # protect password from being logged
 
-- name: Remove user from the sudo group if necessary
+- name: Remove user from the groups in groups_absent if specified
+  vars:
+    sudo_group_absent: "{{ (not user.sudo is defined or not user.sudo) | ternary([sudo_group], []) }}"
+    groups_absent: "{{ (user.groups_absent | default([]) + sudo_group_absent) | unique }}"
   ansible.builtin.command:
-    cmd: "/usr/bin/gpasswd -d {{ user.username }} {{ sudo_group }}"
-  when: not user.sudo is defined or not user.sudo
+    cmd: "/usr/bin/gpasswd -d {{ user.username }} {{ item }}"
+  loop: "{{ groups_absent }}"
   register: grp_change
   # If the user is not a member of the specified group, the return code is 3, so don't fail in that case
   failed_when: grp_change.rc != 0 and grp_change.rc != 3
